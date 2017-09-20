@@ -46,11 +46,11 @@ module StripeMock
           customer[:default_source] = new_card[:id]
         end
 
+        # Ensure customer has card to charge if plan has no trial and is not free
+        verify_card_present(customer, plan, params)
+
         subscription = Data.mock_subscription({ id: (params[:id] || new_id('su')) })
         subscription.merge!(custom_subscription_params(plan, customer, params))
-
-        # Ensure customer has card to charge if plan has no trial and is not free
-        verify_card_present(customer, plan, subscription, params)
 
         if params[:coupon]
           coupon_id = params[:coupon]
@@ -63,7 +63,7 @@ module StripeMock
           if coupon
             subscription[:discount] = Stripe::Util.convert_to_stripe_object({ coupon: coupon }, {})
           else
-            raise Stripe::InvalidRequestError.new("No such coupon: #{coupon_id}", 'coupon', http_status: 400)
+            raise Stripe::InvalidRequestError.new("No such coupon: #{coupon_id}", 'coupon', 400)
           end
         end
 
@@ -76,17 +76,11 @@ module StripeMock
       def create_subscription(route, method_url, params, headers)
         route =~ method_url
 
-        plan = params[:plan] ? assert_existence(:plan, params[:plan].to_s, plans[params[:plan].to_s]) : nil
+        plan_id = params[:plan].to_s
+        plan = assert_existence :plan, plan_id, plans[plan_id]
 
-        customer = params[:customer]
-        customer_id = customer.is_a?(Stripe::Customer) ? customer[:id] : customer.to_s
+        customer_id = params[:customer].to_s
         customer = assert_existence :customer, customer_id, customers[customer_id]
-
-        if plan && customer
-          unless customer[:currency] == plan[:currency]
-            raise Stripe::InvalidRequestError.new('lol', 'currency', http_status: 400)
-          end
-        end
 
         if params[:source]
           new_card = get_card_by_token(params.delete(:source))
@@ -94,18 +88,11 @@ module StripeMock
           customer[:default_source] = new_card[:id]
         end
 
-        allowed_params = %w(customer application_fee_percent coupon items metadata plan quantity source tax_percent trial_end trial_period_days current_period_start created)
-        unknown_params = params.keys - allowed_params.map(&:to_sym)
-        if unknown_params.length > 0
-          raise Stripe::InvalidRequestError.new("Received unknown parameter: #{unknown_params.join}", unknown_params.first.to_s, http_status: 400)
-        end
+        # Ensure customer has card to charge if plan has no trial and is not free
+        verify_card_present(customer, plan, params)
 
         subscription = Data.mock_subscription({ id: (params[:id] || new_id('su')) })
         subscription.merge!(custom_subscription_params(plan, customer, params))
-        subscription[:items][:data] = mock_subscription_items(params[:items].values) if params[:items]
-
-        # Ensure customer has card to charge if plan has no trial and is not free
-        verify_card_present(customer, plan, subscription, params)
 
         if params[:coupon]
           coupon_id = params[:coupon]
@@ -118,7 +105,7 @@ module StripeMock
           if coupon
             subscription[:discount] = Stripe::Util.convert_to_stripe_object({ coupon: coupon }, {})
           else
-            raise Stripe::InvalidRequestError.new("No such coupon: #{coupon_id}", 'coupon', http_status: 400)
+            raise Stripe::InvalidRequestError.new("No such coupon: #{coupon_id}", 'coupon', 400)
           end
         end
 
@@ -176,13 +163,13 @@ module StripeMock
           elsif coupon_id == ""
             subscription[:discount] = Stripe::Util.convert_to_stripe_object(nil, {})
           else
-            raise Stripe::InvalidRequestError.new("No such coupon: #{coupon_id}", 'coupon', http_status: 400)
+            raise Stripe::InvalidRequestError.new("No such coupon: #{coupon_id}", 'coupon', 400)
           end
         end
 
         assert_existence :plan, plan_name, plan
         params[:plan] = plan if params[:plan]
-        verify_card_present(customer, plan, subscription)
+        verify_card_present(customer, plan)
 
         if subscription[:cancel_at_period_end]
           subscription[:cancel_at_period_end] = false
@@ -229,11 +216,10 @@ module StripeMock
 
       private
 
-      def verify_card_present(customer, plan, subscription, params={})
-        if customer[:default_source].nil? && customer[:trial_end].nil? &&
-            ((plan && plan[:trial_period_days]) || 0) == 0 && plan[:amount] != 0 && plan[:trial_end].nil? &&
-            params[:trial_end].nil? && (subscription.nil? || subscription[:trial_end].nil? || subscription[:trial_end] == 'now')
-          raise Stripe::InvalidRequestError.new('You must supply a valid card xoxo', nil, http_status: 400)
+      def verify_card_present(customer, plan, params={})
+        if customer[:default_source].nil? && customer[:trial_end].nil? && plan[:trial_period_days].nil? &&
+           plan[:amount] != 0 && plan[:trial_end].nil? && params[:trial_end].nil?
+          raise Stripe::InvalidRequestError.new('You must supply a valid card xoxo', nil, 400)
         end
       end
 
@@ -242,7 +228,7 @@ module StripeMock
 
         if status == 'canceled'
           message = "No such subscription: #{id}"
-          raise Stripe::InvalidRequestError.new(message, 'subscription', http_status: 404)
+          raise Stripe::InvalidRequestError.new(message, 'subscription', 404)
         end
       end
     end

@@ -174,23 +174,7 @@ shared_examples 'Charge API' do
     expect(bal_trans.source).to eq(charge.source)
   end
 
-  context 'when conversion rate is set' do
-    it "balance transaction stores amount converted from charge currency to USD" do
-      StripeMock.set_conversion_rate(1.2)
-
-      charge = Stripe::Charge.create({
-        amount: 300,
-        currency: 'CAD',
-        source: stripe_helper.generate_card_token
-      })
-      bal_trans = Stripe::BalanceTransaction.retrieve(charge.balance_transaction)
-      expect(bal_trans.amount).to eq(charge.amount * 1.2)
-      expect(bal_trans.fee).to eq(39)
-      expect(bal_trans.currency).to eq('usd')
-    end
-  end
-
-  it "can expand balance transaction when creating a charge" do
+  it "can expand balance transaction" do
     charge = Stripe::Charge.create({
       amount: 300,
       currency: 'USD',
@@ -210,20 +194,6 @@ shared_examples 'Charge API' do
 
     expect(charge.id).to eq(original.id)
     expect(charge.amount).to eq(original.amount)
-  end
-
-  it "can expand balance transaction when retrieving a charge" do
-    original = Stripe::Charge.create({
-      amount: 300,
-      currency: 'USD',
-      source: stripe_helper.generate_card_token
-    })
-    charge = Stripe::Charge.retrieve(
-      id: original.id,
-      expand: ['balance_transaction']
-    )
-
-    expect(charge.balance_transaction).to be_a(Stripe::BalanceTransaction)
   end
 
   it "cannot retrieve a charge that doesn't exist" do
@@ -340,7 +310,7 @@ shared_examples 'Charge API' do
     end
 
     it "stores all charges in memory" do
-      expect(Stripe::Charge.all.data.map(&:id).reverse).to eq([@charge.id, @charge2.id])
+      expect(Stripe::Charge.all.data.map(&:id)).to eq([@charge.id, @charge2.id])
     end
 
     it "defaults count to 10 charges" do

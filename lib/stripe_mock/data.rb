@@ -103,7 +103,7 @@ module StripeMock
 
     def self.mock_customer(sources, params)
       cus_id = params[:id] || "test_cus_default"
-      currency = params[:currency] || 'usd'
+      currency = params[:currency] || nil
       sources.each {|source| source[:customer] = cus_id}
       {
         email: 'stripe_mock@example.com',
@@ -283,44 +283,29 @@ module StripeMock
     #FIXME nested overrides would be better than hardcoding plan_id
     def self.mock_subscription(params={})
       StripeMock::Util.rmerge({
-        created: 1478204116,
-        current_period_start: 1308595038,
-        current_period_end: 1308681468,
-        status: 'trialing',
-        plan: {
-          interval: 'month',
-          amount: 7500,
-          trial_period_days: 30,
-          object: 'plan',
-          id: '__test_plan_id__'
+        :created => 1478204116,
+        :current_period_start => 1308595038,
+        :current_period_end => 1308681468,
+        :status => "trialing",
+        :plan => {
+          :interval => "month",
+          :amount => 7500,
+          :trial_period_days => 30,
+          :object => "plan",
+          :id => '__test_plan_id__'
         },
-        items: {
-          object: 'list',
-          data: [{
-            id: 'si_1AwFf62eZvKYlo2C9u6Dhf9',
-            created: 1504035973,
-            metadata: {},
-            object: 'subscription_item',
-            plan: {
-              amount: 999,
-              created: 1504035972,
-              currency: 'usd'
-            },
-            quantity: 1
-          }]
-        },
-        cancel_at_period_end: false,
-        canceled_at: nil,
-        ended_at: nil,
-        start: 1308595038,
-        object: 'subscription',
-        trial_start: 1308595038,
-        trial_end: 1308681468,
-        customer: 'c_test_customer',
-        quantity: 1,
-        tax_percent: nil,
-        discount: nil,
-        metadata: {}
+        :cancel_at_period_end => false,
+        :canceled_at => nil,
+        :ended_at => nil,
+        :start => 1308595038,
+        :object => "subscription",
+        :trial_start => 1308595038,
+        :trial_end => 1308681468,
+        :customer => "c_test_customer",
+        :quantity => 1,
+        :tax_percent => nil,
+        :discount => nil,
+        :metadata => {}
       }, params)
     end
 
@@ -328,7 +313,7 @@ module StripeMock
       in_id = params[:id] || "test_in_default"
       currency = params[:currency] || 'usd'
       lines << Data.mock_line_item() if lines.empty?
-      invoice = {
+      {
         id: 'in_test_invoice',
         date: 1349738950,
         period_end: 1349738950,
@@ -340,6 +325,7 @@ module StripeMock
           data: lines
         },
         subtotal: lines.map {|line| line[:amount]}.reduce(0, :+),
+        total: lines.map {|line| line[:amount]}.reduce(0, :+),
         customer: "test_customer",
         object: 'invoice',
         attempted: false,
@@ -356,7 +342,7 @@ module StripeMock
         webhooks_delivered_at: 1349825350,
         livemode: false,
         attempt_count: 0,
-        amount_due: nil,
+        amount_due: lines.map {|line| line[:amount]}.reduce(0, :+),
         currency: currency,
         starting_balance: 0,
         ending_balance: nil,
@@ -365,15 +351,6 @@ module StripeMock
         discount: nil,
         subscription: nil
       }.merge(params)
-      if invoice[:discount]
-        invoice[:total] = [0, invoice[:subtotal] - invoice[:discount][:coupon][:amount_off]].max if invoice[:discount][:coupon][:amount_off]
-        invoice[:total] = invoice[:subtotal] * invoice[:discount][:coupon][:percent_off] / 100 if invoice[:discount][:coupon][:percent_off]
-      else
-        invoice[:total] = invoice[:subtotal]
-      end
-      due = invoice[:total] + invoice[:starting_balance]
-      invoice[:amount_due] = due < 0 ? 0 : due
-      invoice
     end
 
     def self.mock_line_item(params = {})
@@ -605,7 +582,6 @@ module StripeMock
         :fee_details => [],
         :id => id,
         :livemode => false,
-        :metadata => {},
         :currency => currency,
         :object => "transfer",
         :date => 1304114826,
@@ -629,7 +605,6 @@ module StripeMock
     end
 
     def self.mock_dispute(params={})
-      @timestamp ||= Time.now.to_i
       currency = params[:currency] || 'usd'
       id = params[:id] || "dp_test_dispute"
       {
@@ -638,7 +613,7 @@ module StripeMock
         :amount => 195,
         :balance_transactions => [],
         :charge => "ch_15RsQR2eZvKYlo2CA8IfzCX0",
-        :created => @timestamp += 1,
+        :created => 1422915137,
         :currency => currency,
         :evidence => self.mock_dispute_evidence,
         :evidence_details => self.mock_dispute_evidence_details,
@@ -950,32 +925,6 @@ module StripeMock
         },
         status: "pending",
         type: "charge"
-      }.merge(params)
-    end
-
-    def self.mock_subscription_item(params = {})
-      iid = params[:id] || 'test_txn_default'
-      {
-        id: iid,
-        object: 'subscription_item',
-        created: 1504716183,
-        metadata: {
-      },
-        plan: {
-          id: 'PER_USER_PLAN1',
-          object: 'plan',
-          amount: 1337,
-          created: 1504716177,
-          currency: 'usd',
-          interval: 'month',
-          interval_count: 1,
-          livemode: false,
-          metadata: {},
-          name: 'StripeMock Default Plan ID',
-          statement_descriptor: nil,
-          trial_period_days: nil
-        },
-        quantity: 2
       }.merge(params)
     end
   end

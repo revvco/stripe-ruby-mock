@@ -15,10 +15,9 @@ module StripeMock
 
     json = Stripe::Util.symbolize_names(json)
     params = Stripe::Util.symbolize_names(params)
-    json[:account] = params.delete(:account) if params.key?(:account)
+    json[:user_id] = params.delete(:user_id) if params.key?(:user_id)
     json[:data][:object] = Util.rmerge(json[:data][:object], params)
     json.delete(:id)
-    json[:created] = params[:created] || Time.now.to_i
 
     if @state == 'local'
       event_data = instance.generate_webhook_event(json)

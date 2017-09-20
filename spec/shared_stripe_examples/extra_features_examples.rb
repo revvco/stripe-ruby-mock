@@ -8,7 +8,6 @@ shared_examples 'Extra Features' do
 
     customer = Stripe::Customer.create
     expect(customer.id).to match /^custom_prefix_cus/
-    StripeMock.global_id_prefix = nil
   end
 
   it "can set the global id prefix to nothing" do
@@ -24,7 +23,6 @@ shared_examples 'Extra Features' do
 
     customer = Stripe::Customer.create
     expect(customer.id).to match /^cus/
-    StripeMock.global_id_prefix = nil
   end
 
   it "has a default global id prefix" do

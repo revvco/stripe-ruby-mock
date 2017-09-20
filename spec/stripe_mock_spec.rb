@@ -4,15 +4,15 @@ describe StripeMock do
 
   it "overrides stripe's request method" do
     StripeMock.start
-    Stripe::StripeClient.active_client.execute_request(:xtest, '/', api_key: 'abcde') # no error
+    Stripe.request(:xtest, '/', 'abcde') # no error
     StripeMock.stop
   end
 
   it "reverts overriding stripe's request method" do
     StripeMock.start
-    Stripe::StripeClient.active_client.execute_request(:xtest, '/', api_key: 'abcde') # no error
+    Stripe.request(:xtest, '/', 'abcde') # no error
     StripeMock.stop
-    expect { Stripe::StripeClient.active_client.execute_request(:x, '/', api_key: 'abcde') }.to raise_error ArgumentError
+    expect { Stripe.request(:x, '/', 'abcde') }.to raise_error
   end
 
   it "does not persist data between mock sessions" do
