@@ -77,13 +77,11 @@ module StripeMock
       @error_queue = ErrorQueue.new
       @id_counter = 0
       @balance_transaction_counter = 0
-<<<<<<< Updated upstream
       @dispute_counter = 0
       @conversion_rate = 1.0
       @account_balance = 10000
-=======
       @transfer_counter = 0
->>>>>>> Stashed changes
+      @payment_counter = 0
 
       # This is basically a cache for ParamValidators
       @base_strategy = TestStrategies::Base.new

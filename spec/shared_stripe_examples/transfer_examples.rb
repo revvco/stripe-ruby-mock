@@ -30,19 +30,6 @@ shared_examples 'Transfer API' do
     expect(transfer.transfer_group).to eq("group_ch_164xRv2eZvKYlo2Clu1sIJWB")
   end
 
-  it "creates a stripe transfer with destination" do
-    account = Stripe::Account.create(email: 'lol@what.com')
-
-    recipient = Stripe::Recipient.create(type:  "corporation", name: "MyCo")
-    transfer = Stripe::Transfer.create(amount:  "100", currency: "usd", destination: account)
-
-    expect(transfer.id).to match /^test_tr/
-    expect(transfer.amount).to eq('100')
-    expect(transfer.currency).to eq('usd')
-    expect(transfer.recipient).to eq recipient.id
-    expect(transfer.reversed).to eq(false)
-  end
-
   describe "listing transfers" do
     let(:destination) { Stripe::Account.create(email: "#{SecureRandom.uuid}@example.com", business_name: "MyCo") }
 

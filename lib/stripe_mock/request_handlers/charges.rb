@@ -62,7 +62,7 @@ module StripeMock
         end
 
         if params[:expand] == ['transfer']
-          charges[id][:transfer] =
+          charge[:transfer] =
             transfers[transfer_id]
         end
         

@@ -46,6 +46,15 @@ module StripeMock
         end
 
         transfers[id] = Data.mock_transfer(params.merge :id => id)
+
+        transfer = transfers[id].clone
+
+        if params[:destination]
+          transfers[id][:destination_payment] = 
+            transfer_destination_payment(params[:destination], transfer)
+        end
+        
+        transfer
       end
 
       def get_transfer(route, method_url, params, headers)
@@ -59,6 +68,14 @@ module StripeMock
         assert_existence :transfer, $1, transfers[$1]
         t = transfers[$1] ||= Data.mock_transfer(:id => $1)
         t.merge!({:status => "canceled"})
+      end
+
+      ## create a destination payment
+      def transfer_destination_payment(account, transfer)
+        destination_payment_params = { source_transfer: transfer[:id] }
+        id = "#{StripeMock.global_id_prefix}py_#{@payment_counter += 1}"
+        @charges[id] = Data.mock_charge(destination_payment_params.merge(id: id))
+        id
       end
     end
   end
