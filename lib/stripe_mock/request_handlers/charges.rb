@@ -45,9 +45,15 @@ module StripeMock
 
         balance_transaction_id = new_balance_transaction('txn', bal_trans_params)
 
+        transfer_id = if params[:destination]
+          transfer_params = { amount: params[:amount], source: params[:source], destination: params[:destination][:account] }
+          new_transfer('tr', transfer_params)
+        end
+
         charges[id] = Data.mock_charge(
             params.merge :id => id,
-            :balance_transaction => balance_transaction_id)
+            :balance_transaction => balance_transaction_id,
+            :transfer => transfer_id)
 
         charge = charges[id].clone
         if params[:expand] == ['balance_transaction']
@@ -55,6 +61,11 @@ module StripeMock
             balance_transactions[balance_transaction_id]
         end
 
+        if params[:expand] == ['transfer']
+          charges[id][:transfer] =
+            transfers[transfer_id]
+        end
+        
         charge
       end
 

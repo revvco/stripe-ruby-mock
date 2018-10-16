@@ -200,6 +200,40 @@ shared_examples 'Charge API' do
     expect(charge.balance_transaction).to be_a(Stripe::BalanceTransaction)
   end
 
+  it "creates a transfer for destination payments" do
+    account = Stripe::Account.create(email: 'lol@what.com')
+
+    charge = Stripe::Charge.create({
+      amount: 300,
+      currency: 'USD',
+      source: stripe_helper.generate_card_token,
+      destination: {
+        amount: 300,
+        account: account.id
+      }
+    })
+    transfer = Stripe::Transfer.retrieve(charge.transfer)
+    expect(transfer.amount).to eq(charge.amount)
+    expect(transfer.destination).to eq(account.id)
+    expect(transfer.source).to eq(charge.source)
+  end
+
+  it "can expand transfer" do
+    account = Stripe::Account.create(email: 'lol@what.com')
+
+    charge = Stripe::Charge.create({
+      amount: 300,
+      currency: 'USD',
+      source: stripe_helper.generate_card_token,
+      destination: {
+        amount: 300,
+        account: account.id
+      },
+      expand: ['transfer']
+    })
+    expect(charge.transfer).to be_a(Stripe::Transfer)
+  end
+
   it "retrieves a stripe charge" do
     original = Stripe::Charge.create({
       amount: 777,

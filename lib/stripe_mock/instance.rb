@@ -77,9 +77,13 @@ module StripeMock
       @error_queue = ErrorQueue.new
       @id_counter = 0
       @balance_transaction_counter = 0
+<<<<<<< Updated upstream
       @dispute_counter = 0
       @conversion_rate = 1.0
       @account_balance = 10000
+=======
+      @transfer_counter = 0
+>>>>>>> Stashed changes
 
       # This is basically a cache for ParamValidators
       @base_strategy = TestStrategies::Base.new
@@ -185,6 +189,12 @@ module StripeMock
     def new_dispute(prefix, params = {})
       id = "#{StripeMock.global_id_prefix}#{prefix}_#{@dispute_counter += 1}"
       @disputes[id] = Data.mock_dispute(params.merge(id: id))
+    end
+    
+    def new_transfer(prefix, params = {})
+      # balance transaction ids must be strings
+      id = "#{StripeMock.global_id_prefix}#{prefix}_#{@transfer_counter += 1}"
+      @transfers[id] = Data.mock_transfer(params.merge(id: id))
       id
     end
 

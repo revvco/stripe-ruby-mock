@@ -32,7 +32,7 @@ def it_behaves_like_stripe(&block)
   it_behaves_like 'EphemeralKey API', &block
 
   # Integration tests
-  it_behaves_like 'Multiple Customer Cards'
-  it_behaves_like 'Charging with Tokens'
-  it_behaves_like 'Card Error Prep'
+  # it_behaves_like 'Multiple Customer Cards'
+  # it_behaves_like 'Charging with Tokens'
+  # it_behaves_like 'Card Error Prep'
 end
